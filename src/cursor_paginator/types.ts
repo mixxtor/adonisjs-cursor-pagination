@@ -1,5 +1,5 @@
 /*
- * @mixxtor/adonisjs-lucid-cursor
+ * @mixxtor/adonisjs-cursor-pagination
  *
  * (c) Mixxtor Radcliffe <mixxtor@gmail.com>
  *
@@ -117,16 +117,61 @@ export type TCursorPaginateOptions<
   Result extends InstanceType<LucidModel> = InstanceType<LucidModel>,
 > = {
   /**
-   * The orderable column to order by.
+   * Columns to order by with their sort direction.
    *
-   * NOTE: the original orderBy (builder) will be overridden by this option.
-   * @default `model.primaryKey`.
+   * NOTE: This overrides any existing orderBy clauses on the query builder.
+   * @default `{ [model.primaryKey]: 'asc' }`
    */
-  orderByColumns?: TSortableColumns<Result>
+  orderBy?: TSortableColumns<Result>
 
   /**
-   * Indicates if you want to fetch the total number of records.
+   * Include total count of records in the response.
+   * Set to `false` for better performance on large datasets.
    * @default true
    */
-  fetchTotal?: boolean
+  withTotal?: boolean
+}
+
+/**
+ * Object-based parameters for cursor pagination (recommended).
+ *
+ * @example
+ * ```typescript
+ * await User.query().cursorPaginate({
+ *   perPage: 10,
+ *   cursor: 'abc123',
+ *   orderBy: { id: 'asc', createdAt: 'desc' },
+ *   withTotal: false
+ * })
+ * ```
+ */
+export type TCursorPaginateParams<
+  Result extends InstanceType<LucidModel> = InstanceType<LucidModel>,
+> = {
+  /**
+   * Number of items per page.
+   * @default 10
+   */
+  perPage?: number
+
+  /**
+   * The cursor string from a previous pagination result.
+   * Pass `null` or omit for the first page.
+   */
+  cursor?: string | null
+
+  /**
+   * Columns to order by with their sort direction.
+   *
+   * NOTE: This overrides any existing orderBy clauses on the query builder.
+   * @default `{ [model.primaryKey]: 'asc' }`
+   */
+  orderBy?: TSortableColumns<Result>
+
+  /**
+   * Include total count of records in the response.
+   * Set to `false` for better performance on large datasets.
+   * @default true
+   */
+  withTotal?: boolean
 }

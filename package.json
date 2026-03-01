@@ -1,7 +1,7 @@
 {
-  "name": "@mixxtor/adonisjs-lucid-cursor",
+  "name": "@mixxtor/adonisjs-cursor-pagination",
   "version": "1.0.0-beta.1",
-  "description": "Lucid cursor pagination for AdonisJS",
+  "description": "Cursor-based pagination for AdonisJS Lucid ORM",
   "engines": {
     "node": ">=20.6.0"
   },
@@ -100,13 +100,13 @@
   "dependencies": {
     "qs": "^6.14.0"
   },
-  "homepage": "https://github.com/mixxtor/adonisjs-lucid-cursor#readme",
+  "homepage": "https://github.com/mixxtor/adonisjs-cursor-pagination#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mixxtor/adonisjs-lucid-cursor.git"
+    "url": "git+https://github.com/mixxtor/adonisjs-cursor-pagination.git"
   },
   "bugs": {
-    "url": "https://github.com/mixxtor/adonisjs-lucid-cursor/issues"
+    "url": "https://github.com/mixxtor/adonisjs-cursor-pagination/issues"
   },
   "publishConfig": {
     "access": "public",
@@ -211,9 +211,9 @@
   },
   "prettier": "@adonisjs/prettier-config",
   "adonisjs": {
-    "types": "@mixxtor/adonisjs-lucid-cursor",
+    "types": "@mixxtor/adonisjs-cursor-pagination",
     "providers": [
-      "@mixxtor/adonisjs-lucid-cursor/provider"
+      "@mixxtor/adonisjs-cursor-pagination/provider"
     ]
   }
 }

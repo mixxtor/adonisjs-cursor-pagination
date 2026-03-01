@@ -1,5 +1,5 @@
 /*
- * @mixxtor/adonisjs-lucid-cursor
+ * @mixxtor/adonisjs-cursor-pagination
  *
  * (c) Mixxtor Radcliffe <mixxtor@gmail.com>
  *
@@ -10,7 +10,7 @@
 import { DatabaseQueryBuilder } from '@adonisjs/lucid/database'
 import { ModelQueryBuilder, SnakeCaseNamingStrategy } from '@adonisjs/lucid/orm'
 import { CursorPaginator, ModelCursorPaginator } from './paginator.js'
-import type { TCursorData, TCursorPaginateOptions } from './types.js'
+import type { TCursorData, TCursorPaginateOptions, TCursorPaginateParams } from './types.js'
 import type { LucidRow } from '@adonisjs/lucid/types/model'
 import { CursorSnakeCaseNamingStrategy } from './naming_strategies/snake_case.js'
 import { CursorCamelCaseNamingStrategy } from './naming_strategies/camel_case.js'
@@ -18,28 +18,63 @@ import { CursorCamelCaseNamingStrategy } from './naming_strategies/camel_case.js
 /**
  * Cursor paginates the data based on the provided parameters.
  *
- * @param {number} perPage - The number of items per page.
- * @param {string | null} cursor - The cursor for pagination.
- * @param {object} options - The options for cursor pagination.
- * @param {object} options.orderByColumns - The object containing the sortable columns. Default is `model.primaryKey` with `asc` direction.
- * @param {boolean} options.fetchTotal - Whether to fetch the total number of records. Default is `true`.
+ * Supports two calling signatures:
+ *
+ * **Object-based (recommended):**
+ * ```typescript
+ * cursorPaginate({
+ *   perPage: 10,
+ *   cursor?: 'abc123',
+ *   orderBy?: { id: 'asc' },
+ *   withTotal?: true
+ * })
+ * ```
+ *
+ * **Positional (legacy, backward compatible):**
+ * ```typescript
+ * cursorPaginate(perPage, cursor?, options?)
+ * ```
+ *
+ * @param paramsOrPerPage - Options object or number of items per page
+ * @param cursor - (Legacy) The cursor for pagination
+ * @param options - (Legacy) Additional pagination options
  */
 export async function cursorPaginateMacroFn(
   this: DatabaseQueryBuilder | ModelQueryBuilder,
-  perPage: number = 10,
+  paramsOrPerPage: TCursorPaginateParams<LucidRow> | number = 10,
   cursor?: string | null,
   options?: TCursorPaginateOptions<LucidRow>
 ) {
+  // Normalize arguments: support both object-based and positional signatures
+  let perPage: number
+  let normalizedCursor: string | null | undefined
+  let normalizedOptions: TCursorPaginateOptions<LucidRow> | undefined
+
+  if (typeof paramsOrPerPage === 'object' && paramsOrPerPage !== null) {
+    // Object-based signature
+    perPage = paramsOrPerPage.perPage ?? 10
+    normalizedCursor = paramsOrPerPage.cursor
+    normalizedOptions = {
+      orderBy: paramsOrPerPage.orderBy,
+      withTotal: paramsOrPerPage.withTotal,
+    }
+  } else {
+    // Legacy positional signature
+    perPage = paramsOrPerPage ?? 10
+    normalizedCursor = cursor
+    normalizedOptions = options
+  }
+
   /**
    * Cast to number
    */
   perPage = typeof perPage === 'string' ? Number.parseInt(perPage) : Number(perPage)
 
   let total: number = Number.NaN
-  let { orderByColumns = {}, fetchTotal = true } = options ?? {}
+  let { orderBy = {}, withTotal = true } = normalizedOptions ?? {}
 
   // Use a mutable record type for dynamic column access
-  let mutableOrderByColumns: Record<string, 'asc' | 'desc' | undefined> = { ...orderByColumns }
+  let mutableOrderByColumns: Record<string, 'asc' | 'desc' | undefined> = { ...orderBy }
 
   const isModelQuery = this instanceof ModelQueryBuilder
   const primaryKey = isModelQuery ? this.model.primaryKey : 'id'
@@ -80,7 +115,7 @@ export async function cursorPaginateMacroFn(
     await this.model.$hooks.runner('before:fetch').run(this)
   }
 
-  if (fetchTotal) {
+  if (withTotal) {
     const aggregates = await countQuery.exec()
     total = isModelQuery
       ? this.hasGroupBy
@@ -128,11 +163,11 @@ export async function cursorPaginateMacroFn(
 
   const clonedOrderByColumns: typeof mutableOrderByColumns = { ...mutableOrderByColumns }
   const cursorData = (
-    cursor ? JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8')) : null
+    normalizedCursor ? JSON.parse(Buffer.from(normalizedCursor, 'base64').toString('utf-8')) : null
   ) as TCursorData
   const cloneCursorData = { ...cursorData }
 
-  if (cursor) {
+  if (normalizedCursor) {
     /**
      * Extract cursor values eagerly (outside deferred callbacks) so that
      * the WHERE conditions are idempotent across multiple `applyWhere()` calls.
@@ -168,7 +203,7 @@ export async function cursorPaginateMacroFn(
   }
 
   for (let [column, direction] of Object.entries(mutableOrderByColumns)) {
-    if (cursor && !cloneCursorData.point_to_next) {
+    if (normalizedCursor && !cloneCursorData.point_to_next) {
       direction = direction === 'asc' ? 'desc' : 'asc'
     }
     this.orderBy(column, direction as 'asc' | 'desc')

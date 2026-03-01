@@ -1,5 +1,5 @@
 /*
- * @mixxtor/adonisjs-lucid-cursor
+ * @mixxtor/adonisjs-cursor-pagination
  *
  * (c) Mixxtor Radcliffe <mixxtor@gmail.com>
  *
@@ -232,7 +232,7 @@ test.group('Cursor Paginator', (group) => {
 
     const page = await TestPost.query()
       .orderBy('id', 'asc')
-      .cursorPaginate(5, null, { fetchTotal: false })
+      .cursorPaginate(5, null, { withTotal: false })
 
     assert.equal(page.items().length, 5)
     assert.isNaN(page.total)
@@ -243,7 +243,7 @@ test.group('Cursor Paginator', (group) => {
     const { TestPost } = getTestModels()
 
     const page = await TestPost.query().cursorPaginate(5, null, {
-      orderByColumns: { views: 'desc', id: 'asc' },
+      orderBy: { views: 'desc', id: 'asc' },
     })
 
     assert.equal(page.items().length, 5)
@@ -320,5 +320,93 @@ test.group('Cursor Paginator - Edge Cases', (group) => {
     assert.equal(page.items().length, 1)
     assert.isFalse(page.hasMorePages)
     assert.isNull(page.getNextCursor())
+  })
+})
+
+test.group('Cursor Paginator - Object-based API', (group) => {
+  group.setup(async () => {
+    db = await createDatabase()
+    await createTables(db)
+    await seedDatabase(db, 25)
+  })
+
+  group.teardown(async () => {
+    await dropTables(db)
+    await cleanupDatabase(db)
+  })
+
+  test('should paginate using object-based parameters', async ({ assert }) => {
+    const { TestPost } = getTestModels()
+
+    const page = await TestPost.query().cursorPaginate({ perPage: 5 })
+
+    assert.instanceOf(page, ModelCursorPaginator)
+    assert.equal(page.items().length, 5)
+    assert.equal(page.perPage, 5)
+    assert.isTrue(page.hasMorePages)
+    assert.equal(page.total, 25)
+  })
+
+  test('should navigate pages using object-based cursor', async ({ assert }) => {
+    const { TestPost } = getTestModels()
+
+    const firstPage = await TestPost.query().cursorPaginate({
+      perPage: 5,
+      orderBy: { id: 'asc' },
+    })
+
+    const nextCursor = firstPage.getNextCursor()
+    assert.isNotNull(nextCursor)
+
+    const secondPage = await TestPost.query().cursorPaginate({
+      perPage: 5,
+      cursor: nextCursor,
+      orderBy: { id: 'asc' },
+    })
+
+    assert.equal(secondPage.items().length, 5)
+    assert.isNotNull(secondPage.getPreviousCursor())
+
+    // Items should be different
+    const firstIds = firstPage.items().map((p) => p.id)
+    const secondIds = secondPage.items().map((p) => p.id)
+    for (const id of secondIds) {
+      assert.notInclude(firstIds, id)
+    }
+  })
+
+  test('should skip total count using object-based withTotal', async ({ assert }) => {
+    const { TestPost } = getTestModels()
+
+    const page = await TestPost.query().cursorPaginate({
+      perPage: 5,
+      withTotal: false,
+      orderBy: { id: 'asc' },
+    })
+
+    assert.equal(page.items().length, 5)
+    assert.isNaN(page.total)
+    assert.isFalse(page.hasTotal)
+  })
+
+  test('should work with database query builder using object-based API', async ({ assert }) => {
+    const page = await db.from('test_posts').cursorPaginate({
+      perPage: 5,
+      orderBy: { id: 'asc' },
+    })
+
+    assert.instanceOf(page, CursorPaginator)
+    assert.equal(page.items().length, 5)
+    assert.isTrue(page.hasMorePages)
+  })
+
+  test('should use default perPage when not provided', async ({ assert }) => {
+    const { TestPost } = getTestModels()
+
+    const page = await TestPost.query().cursorPaginate({})
+
+    // Default perPage is 10
+    assert.equal(page.perPage, 10)
+    assert.equal(page.items().length, 10)
   })
 })

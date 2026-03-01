@@ -1,5 +1,5 @@
 /*
- * @mixxtor/adonisjs-lucid-cursor
+ * @mixxtor/adonisjs-cursor-pagination
  *
  * (c) Mixxtor Radcliffe <mixxtor@gmail.com>
  *
@@ -12,6 +12,7 @@ import type {
   CursorPaginatorContract,
   ModelCursorPaginatorContract,
   TCursorPaginateOptions,
+  TCursorPaginateParams,
 } from './types.js'
 
 /**
@@ -19,8 +20,16 @@ import type {
  */
 interface DatabaseQueryBuilderCursorMacros<Result extends InstanceType<LucidModel>> {
   /**
-   * Paginate query results using a cursor.
-   * NOTE: To avoid ordering issues, this method will override the orderBy method.
+   * Paginate query results using a cursor (object-based API).
+   *
+   * @param params - The cursor pagination parameters.
+   */
+  cursorPaginate<R extends Result>(
+    params: TCursorPaginateParams<R>
+  ): Promise<CursorPaginatorContract<R>>
+
+  /**
+   * Paginate query results using a cursor (positional API - legacy).
    *
    * @param perPage - The maximum number of records to return per page.
    * @param cursor - The cursor value to start from.
@@ -41,8 +50,18 @@ interface ModelQueryBuilderCursorMacros<
   Result extends InstanceType<Model> = InstanceType<Model>,
 > {
   /**
-   * Paginate query results using a cursor.
-   * NOTE: To avoid ordering issues, this method will override the orderBy method.
+   * Paginate query results using a cursor (object-based API).
+   *
+   * @param params - The cursor pagination parameters.
+   */
+  cursorPaginate(
+    params: TCursorPaginateParams<Result>
+  ): Promise<
+    Result extends LucidRow ? ModelCursorPaginatorContract<Result> : CursorPaginatorContract<Result>
+  >
+
+  /**
+   * Paginate query results using a cursor (positional API - legacy).
    *
    * @param perPage - The maximum number of records to return per page.
    * @param cursor - The cursor value to start from.

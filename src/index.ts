@@ -1,5 +1,5 @@
 /*
- * @mixxtor/adonisjs-lucid-cursor
+ * @mixxtor/adonisjs-cursor-pagination
  *
  * (c) Mixxtor Radcliffe <mixxtor@gmail.com>
  *

@@ -21,6 +21,6 @@ export async function configure(command: ConfigureCommand) {
    * Register provider
    */
   await codemods.updateRcFile((rcFile) => {
-    rcFile.addProvider('@mixxtor/adonisjs-lucid-cursor/provider')
+    rcFile.addProvider('@mixxtor/adonisjs-cursor-pagination/provider')
   })
 }

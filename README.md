@@ -1,11 +1,52 @@
-# @mixxtor/adonisjs-lucid-cursor
+# @mixxtor/adonisjs-cursor-pagination
 
-Cursor-based pagination for AdonisJS Lucid ORM. This package provides efficient cursor pagination for both Model and Database query builders, enabling smooth infinite scroll and pagination experiences.
+![npm](https://img.shields.io/npm/v/@mixxtor/adonisjs-cursor-pagination)
+![license](https://img.shields.io/npm/l/@mixxtor/adonisjs-cursor-pagination)
+![downloads](https://img.shields.io/npm/dm/@mixxtor/adonisjs-cursor-pagination)
+
+Cursor-based pagination for AdonisJS v6 powered by Lucid ORM.
+
+Provides stable, performant pagination for large datasets with full support for Models and Database query builders.
+
+## Features
+
+- 🚀 High-performance cursor pagination
+- 🔁 Forward & backward navigation
+- 🧱 Works with Model & Database query builders
+- 🔗 Built-in URL generation
+- 🧮 Optional total count fetching
+- 🧵 Fully typed (TypeScript)
+
+## Why cursor pagination?
+
+Offset pagination has performance issues on large datasets. Cursor pagination provides stable and efficient pagination without skipping or duplicating records.
+
+```typescript
+// Offset (slow on large tables)
+User.query().paginate(1, 10)
+
+// Cursor (fast)
+User.query().cursorPaginate({ perPage: 10 })
+```
+
+## When to use offset pagination instead?
+
+If you need:
+- Random page access (e.g. go to page 42)
+- SEO-friendly numbered pagination
+
+Offset pagination might be more suitable.
+
+## Requirements
+
+- AdonisJS v6
+- Lucid v21+
+- Node.js >= 20.6
 
 ## Installation
 
 ```bash
-npm install @mixxtor/adonisjs-lucid-cursor
+npm install @mixxtor/adonisjs-cursor-pagination
 ```
 
 ## Setup
@@ -13,7 +54,7 @@ npm install @mixxtor/adonisjs-lucid-cursor
 Configure the package using the ace command:
 
 ```bash
-node ace configure @mixxtor/adonisjs-lucid-cursor
+node ace configure @mixxtor/adonisjs-cursor-pagination
 ```
 
 This will automatically register the provider in your `adonisrc.ts`:
@@ -23,7 +64,7 @@ This will automatically register the provider in your `adonisrc.ts`:
 export default defineConfig({
   providers: [
     // ... other providers
-    () => import('@mixxtor/adonisjs-lucid-cursor/provider'),
+    () => import('@mixxtor/adonisjs-cursor-pagination/provider'),
   ],
 })
 ```
@@ -35,22 +76,22 @@ export default defineConfig({
 ```typescript
 import User from '#models/user'
 
-// First page (no cursor)
+// First page (recommended object-based API)
 const firstPage = await User.query()
   .orderBy('id', 'asc')
-  .cursorPaginate(10)
+  .cursorPaginate({ perPage: 10 })
 
 // Get next page using cursor
 const nextCursor = firstPage.getNextCursor()
 const secondPage = await User.query()
   .orderBy('id', 'asc')
-  .cursorPaginate(10, nextCursor)
+  .cursorPaginate({ perPage: 10, cursor: nextCursor })
 
 // Navigate backwards
 const prevCursor = secondPage.getPreviousCursor()
 const backToFirst = await User.query()
   .orderBy('id', 'asc')
-  .cursorPaginate(10, prevCursor)
+  .cursorPaginate({ perPage: 10, cursor: prevCursor })
 ```
 
 ### API Response
@@ -60,7 +101,7 @@ The paginator returns a structured response suitable for API endpoints:
 ```typescript
 const posts = await Post.query()
   .orderBy('created_at', 'desc')
-  .cursorPaginate(10)
+  .cursorPaginate({ perPage: 10 })
 
 // Get JSON response with meta information
 const response = posts.toJSON()
@@ -89,8 +130,9 @@ You can specify custom columns to order by:
 
 ```typescript
 const posts = await Post.query()
-  .cursorPaginate(10, null, {
-    orderByColumns: {
+  .cursorPaginate({
+    perPage: 10,
+    orderBy: {
       views: 'desc',
       id: 'asc'
     }
@@ -104,7 +146,10 @@ For better performance on large datasets, skip fetching the total count:
 ```typescript
 const posts = await Post.query()
   .orderBy('id', 'asc')
-  .cursorPaginate(10, null, { fetchTotal: false })
+  .cursorPaginate({
+    perPage: 10,
+    withTotal: false
+  })
 
 // posts.total will be NaN
 // posts.hasTotal will be false
@@ -120,7 +165,7 @@ import db from '@adonisjs/lucid/services/db'
 const results = await db
   .from('posts')
   .orderBy('id', 'asc')
-  .cursorPaginate(10)
+  .cursorPaginate({ perPage: 10 })
 ```
 
 ### Setting Base URL and Query Strings
@@ -128,7 +173,7 @@ const results = await db
 ```typescript
 const posts = await Post.query()
   .orderBy('id', 'asc')
-  .cursorPaginate(10)
+  .cursorPaginate({ perPage: 10 })
 
 posts
   .baseUrl('/api/posts')
@@ -143,7 +188,7 @@ posts
 ```typescript
 const posts = await Post.query()
   .orderBy('id', 'asc')
-  .cursorPaginate(10)
+  .cursorPaginate({ perPage: 10 })
 
 // Get all items
 posts.items() // or posts.all()
@@ -152,7 +197,7 @@ posts.items() // or posts.all()
 posts.isEmpty         // true if no results
 posts.hasMorePages    // true if there's a next page
 posts.hasPages        // true if there are any results
-posts.total           // total count (if fetchTotal is true)
+posts.total           // total count (if withTotal is true)
 posts.perPage         // items per page
 ```
 
@@ -163,7 +208,7 @@ The paginator extends Array, so you can iterate and use array methods:
 ```typescript
 const posts = await Post.query()
   .orderBy('id', 'asc')
-  .cursorPaginate(10)
+  .cursorPaginate({ perPage: 10 })
 
 // Iterate
 for (const post of posts) {
@@ -176,14 +221,38 @@ console.log(posts.length)
 
 ## API Reference
 
-### cursorPaginate(perPage, cursor?, options?)
+### cursorPaginate(options) — Object-based (recommended)
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `perPage` | `number` | Number of items per page |
-| `cursor` | `string \| null` | Cursor string for pagination (null for first page) |
-| `options.orderByColumns` | `object` | Custom columns to order by with direction |
-| `options.fetchTotal` | `boolean` | Whether to fetch total count (default: true) |
+```typescript
+cursorPaginate({
+  perPage?: number,          // default: 10
+  cursor?: string | null,    // default: null (first page)
+  orderBy?: Record<string, 'asc' | 'desc'>,
+  withTotal?: boolean        // default: true
+})
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `perPage` | `number` | `10` | Number of items per page |
+| `cursor` | `string \| null` | `null` | Cursor string for pagination (null for first page) |
+| `orderBy` | `object` | `{ primaryKey: 'asc' }` | Columns to order by with direction |
+| `withTotal` | `boolean` | `true` | Include total count in response |
+
+### cursorPaginate(perPage, cursor?, options?) — Positional (legacy)
+
+```typescript
+cursorPaginate(
+  perPage: number,
+  cursor?: string | null,
+  options?: {
+    orderBy?: Record<string, 'asc' | 'desc'>
+    withTotal?: boolean
+  }
+)
+```
+
+Both signatures are supported for backward compatibility.
 
 ### Paginator Methods
 
@@ -228,3 +297,7 @@ npm run quick:test
 ## License
 
 MIT
+
+---
+
+Maintained by [Mixxtor](https://github.com/mixxtor).
