@@ -41,7 +41,7 @@ Offset pagination might be more suitable.
 
 - AdonisJS v6
 - Lucid v21+
-- Node.js >= 20.6
+- Node.js >= 20.11.0
 
 ## Installation
 
