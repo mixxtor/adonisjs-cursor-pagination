@@ -321,6 +321,35 @@ test.group('Cursor Paginator - Edge Cases', (group) => {
     assert.isFalse(page.hasMorePages)
     assert.isNull(page.getNextCursor())
   })
+
+  test('should handle single item with order by on non-primary key', async ({ assert }) => {
+    await db.from('test_posts').delete()
+    await seedDatabase(db, 1)
+
+    const { TestPost } = getTestModels()
+
+    const page = await TestPost.query().orderBy('views', 'asc').cursorPaginate(5)
+
+    assert.equal(page.items().length, 1)
+    assert.isFalse(page.hasMorePages)
+    assert.isNull(page.getNextCursor())
+  })
+
+  test('should handle single item with multiple order by columns', async ({ assert }) => {
+    await db.from('test_posts').delete()
+    await seedDatabase(db, 1)
+
+    const { TestPost } = getTestModels()
+
+    const page = await TestPost.query().cursorPaginate({
+      perPage: 5,
+      orderBy: { views: 'asc', createdAt: 'desc' },
+    })
+
+    assert.equal(page.items().length, 1)
+    assert.isFalse(page.hasMorePages)
+    assert.isNull(page.getNextCursor())
+  })
 })
 
 test.group('Cursor Paginator - Object-based API', (group) => {
