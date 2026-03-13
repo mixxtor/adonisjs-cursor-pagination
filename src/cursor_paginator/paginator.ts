@@ -164,7 +164,15 @@ export class CursorPaginator<Result extends LucidRow = LucidRow>
     }
   }
 
-  #genCursor(columns: SortableColumnsInternal, item: Result, pointToNext: boolean = false): string {
+  #genCursor(
+    columns: SortableColumnsInternal,
+    item: Result,
+    pointToNext: boolean = false
+  ): string | null {
+    if (!item) {
+      return null
+    }
+
     const cursor: TCursorData = {
       data: Object.keys(columns).map((column) => item[column as keyof Result]),
       point_to_next: pointToNext,
