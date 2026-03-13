@@ -25,7 +25,10 @@ import { CursorCamelCaseNamingStrategy } from './naming_strategies/camel_case.js
 /**
  * Internal sortable columns type for runtime operations
  */
-type SortableColumnsInternal = Record<string, 'asc' | 'desc' | undefined>
+type SortableColumnsInternal<Result extends LucidRow = LucidRow> = Record<
+  NonNullable<keyof ModelAttributes<Result>>,
+  'asc' | 'desc' | undefined
+>
 
 /**
  * Cursor paginator works with the data set provided by the cursor-based
@@ -100,7 +103,7 @@ export class CursorPaginator<Result extends LucidRow = LucidRow>
   constructor(
     public perPage: number,
     private currentCursor: TCursorData | undefined | null,
-    private orderByColumns: SortableColumnsInternal,
+    private orderByColumns: SortableColumnsInternal<Result>,
     private totalNumber: number | undefined,
 
     /**
@@ -128,7 +131,7 @@ export class CursorPaginator<Result extends LucidRow = LucidRow>
    * @returns void
    */
   #setCursor(
-    orderByColumns: SortableColumnsInternal,
+    orderByColumns: SortableColumnsInternal<Result>,
     currentCursor: TCursorData | null | undefined
   ) {
     if (!this.hasMorePages) {
@@ -165,7 +168,7 @@ export class CursorPaginator<Result extends LucidRow = LucidRow>
   }
 
   #genCursor(
-    columns: SortableColumnsInternal,
+    columns: SortableColumnsInternal<Result>,
     item: Result,
     pointToNext: boolean = false
   ): string | null {
