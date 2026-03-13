@@ -1,8 +1,8 @@
-# @mixxtor/adonisjs-cursor-pagination
+# @ordius/adonisjs-cursor-pagination
 
-![npm](https://img.shields.io/npm/v/@mixxtor/adonisjs-cursor-pagination)
-![license](https://img.shields.io/npm/l/@mixxtor/adonisjs-cursor-pagination)
-![downloads](https://img.shields.io/npm/dm/@mixxtor/adonisjs-cursor-pagination)
+![npm](https://img.shields.io/npm/v/@ordius/adonisjs-cursor-pagination)
+![license](https://img.shields.io/npm/l/@ordius/adonisjs-cursor-pagination)
+![downloads](https://img.shields.io/npm/dm/@ordius/adonisjs-cursor-pagination)
 
 Cursor-based pagination for AdonisJS v6 powered by Lucid ORM.
 
@@ -46,7 +46,7 @@ Offset pagination might be more suitable.
 ## Installation
 
 ```bash
-npm install @mixxtor/adonisjs-cursor-pagination
+npm install @ordius/adonisjs-cursor-pagination
 ```
 
 ## Setup
@@ -54,7 +54,7 @@ npm install @mixxtor/adonisjs-cursor-pagination
 Configure the package using the ace command:
 
 ```bash
-node ace configure @mixxtor/adonisjs-cursor-pagination
+node ace configure @ordius/adonisjs-cursor-pagination
 ```
 
 This will automatically register the provider in your `adonisrc.ts`:
@@ -64,7 +64,7 @@ This will automatically register the provider in your `adonisrc.ts`:
 export default defineConfig({
   providers: [
     // ... other providers
-    () => import('@mixxtor/adonisjs-cursor-pagination/provider'),
+    () => import('@ordius/adonisjs-cursor-pagination/provider'),
   ],
 })
 ```
